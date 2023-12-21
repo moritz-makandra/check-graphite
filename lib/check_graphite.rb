@@ -2,6 +2,7 @@ require "nagios_check"
 require "json"
 require "net/https"
 require "check_graphite/version"
+require 'cgi'
 
 module CheckGraphite
 
@@ -9,8 +10,12 @@ module CheckGraphite
     include NagiosCheck
 
     on "--endpoint ENDPOINT", "-H ENDPOINT", :mandatory
-    on "--metric METRIC", "-M METRIC", :mandatory
-    on "--from TIMEFRAME", "-F TIMEFRAME", :default => "30seconds"
+    on "--metric METRIC", "-M METRIC", :mandatory do |input|
+      options.metric= CGI.escape(input)
+    end
+    on "--from TIMEFRAME", "-F TIMEFRAME", :default => "30seconds" do |input|
+      options.from= CGI.escape(input)
+    end
     on "--name NAME", "-N NAME", :default => :value
     on "--username USERNAME", "-U USERNAME"
     on "--password PASSWORD", "-P PASSWORD"
@@ -25,7 +30,16 @@ module CheckGraphite
     enable_timeout
 
     def check
-      uri = URI(URI.encode("#{options.endpoint}?target=#{options.metric}&from=-#{options.from}&format=json"))
+
+      query = %W[
+        target=#{options.metric}
+        from=-#{options.from}
+        format=json
+      ]
+
+      uri = URI.parse(options.endpoint)
+      uri.query = query.join('&')
+
       req = Net::HTTP::Get.new(uri.request_uri)
 
       # use basic auth if username is set
