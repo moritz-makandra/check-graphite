@@ -110,6 +110,13 @@ describe CheckGraphite::Command do
       stub_const('ARGV', %w[-H http://your.graphite.host/render -M all.values.null])
       expect { subject.run }.to raise_error(SystemExit).and output(/UNKNOWN: INTERNAL ERROR: (RuntimeError: )?no valid datapoints/).to_stdout
     end
+
+    context 'with -I set ' do
+      it 'returns OK do' do
+        stub_const('ARGV', %w[-H http://your.graphite.host/render -M all.values.null -I])
+        expect { subject.run }.to raise_error(SystemExit).and output(/OK: value missing - ignoring/).to_stdout
+      end
+    end
   end
 
   describe "when Graphite returns multiple targets" do

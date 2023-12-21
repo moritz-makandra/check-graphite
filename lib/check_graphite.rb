@@ -56,7 +56,14 @@ module CheckGraphite
 
       # Remove NULL values. Return UNKNOWN if there's nothing left.
       datapoints.reject! { |v| v.first.nil? }
-      raise "no valid datapoints" if datapoints.size == 0
+
+      if options.send('ignore-missing') and datapoints.empty?
+        store_value options.name, 0
+        store_message "#{options.name} missing - ignoring"
+        return
+      elsif datapoints.empty?
+        raise "no valid datapoints"
+      end
 
       sum = datapoints.reduce(0.0) {|acc, v| acc + v.first }
       value = sum / datapoints.size
